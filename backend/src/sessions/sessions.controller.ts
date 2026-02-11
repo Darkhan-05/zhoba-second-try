@@ -2,9 +2,9 @@ import { Controller, Post, Get, Body, Param, NotFoundException } from '@nestjs/c
 import { SessionsService } from './sessions.service';
 import { AnalyticsService } from './analytics.service';
 
-class CreateSessionDto {
-  topic: string;
+export class CreateSessionDto {
   roomCode: string;
+  questions: string[];
 }
 
 @Controller('sessions')
@@ -16,7 +16,7 @@ export class SessionsController {
 
   @Post()
   async create(@Body() createSessionDto: CreateSessionDto) {
-    return this.sessionsService.create(createSessionDto.topic, createSessionDto.roomCode);
+    return this.sessionsService.create(createSessionDto);
   }
 
   @Get(':roomCode')

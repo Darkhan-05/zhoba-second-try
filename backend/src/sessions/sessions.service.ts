@@ -1,17 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Session } from '@prisma/client';
+import { CreateSessionDto } from './sessions.controller';
 
 @Injectable()
 export class SessionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async create(topic: string, roomCode: string): Promise<Session> {
+  async create(questions: string[], roomCode: string) {
     return this.prisma.session.create({
       data: {
-        topic,
         roomCode,
+        questions: {
+          create: questions.map(content => ({ content }))
+        }
       },
+      include: { questions: true }
     });
   }
 
