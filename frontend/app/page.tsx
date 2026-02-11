@@ -20,7 +20,7 @@ export default function Home() {
     setError('');
 
     try {
-      const res = await fetch(`http://localhost:3001/sessions/${roomCode}`);
+      const res = await fetch(`http://localhost:4001/sessions/${roomCode}`);
       if (!res.ok) {
         throw new Error('Room not found');
       }
