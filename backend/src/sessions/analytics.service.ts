@@ -11,30 +11,31 @@ export class AnalyticsService {
   }
 
   async summarizeAnswers(topic: string, answers: any[]) {
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
       You are an expert educational analyst. You will be provided with a JSON array of student responses.
-      Analyze: Look for patterns across ${answers.length} entries.
-      Synthesize: Instead of quoting students, summarize the collective thought process.
       Topic: "${topic}"
       Responses: ${JSON.stringify(answers)}
 
-      Output: Return a JSON object with these keys:
-      factual_overview: (Bullet points of data/facts mentioned).
-      emotional_climate: (The general feeling of the class).
-      critical_concerns: (The 3 biggest risks identified).
-      innovative_ideas: (The most creative 'Green Hat' solutions).
-      final_consensus: (A 2-sentence conclusion for the teacher).
-
-      Ensure the response is a valid JSON object.
+      INSTRUCTION:
+      1. Analyze patterns across all ${answers.length} entries.
+      2. Summarize the collective thought process instead of quoting individuals.
+      3. IMPORTANT: Regardless of the language used by students (Kazakh, English, or Russian), your output MUST be entirely in RUSSIAN.
+      
+      Output MUST be a valid JSON object with these EXACT keys:
+      factual_overview: (Краткий обзор фактов и данных в виде буллитов на русском).
+      emotional_climate: (Общий эмоциональный настрой класса на русском).
+      critical_concerns: (3 главных риска или критических замечания на русском).
+      innovative_ideas: (Самые креативные идеи 'Зеленой шляпы' на русском).
+      final_consensus: (Итоговое резюме для учителя в 2-х предложениях на русском).
     `;
 
     try {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       let text = response.text();
-
+      console.log('text', text)
       // Clean up the text if it contains markdown code blocks
       text = text.replace(/```json|```/g, '').trim();
 

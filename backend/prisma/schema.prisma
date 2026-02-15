@@ -13,8 +13,10 @@ datasource db {
 model Session {
   id        String     @id @default(uuid())
   roomCode  String     @unique
+  topic     String     @default("Untitled")
   active    Boolean    @default(true)
   questions Question[]
+  answers   Answer[]
   createdAt DateTime   @default(now())
 }
 
@@ -32,7 +34,9 @@ model Answer {
   studentName String
   hatColor    String
   content     String
-  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId  String
+  question    Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId  String?
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String
   createdAt   DateTime @default(now())
 }

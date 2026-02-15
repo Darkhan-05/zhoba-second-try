@@ -3,12 +3,17 @@ import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class AnswersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
+
+  findAll() {
+    return this.prisma.answer.findMany()
+  }
 
   async create(data: {
     studentName: string;
     hatColor: string;
     content: string;
+    questionId: string;
     roomCode: string;
   }) {
     const session = await this.prisma.session.findUnique({
@@ -16,7 +21,15 @@ export class AnswersService {
     });
 
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw new NotFoundException('Сессия не найдена');
+    }
+
+    const question = await this.prisma.question.findUnique({
+      where: { id: data.questionId }
+    });
+
+    if (!question) {
+      throw new NotFoundException('Вопрос не найден');
     }
 
     return this.prisma.answer.create({
@@ -25,6 +38,7 @@ export class AnswersService {
         hatColor: data.hatColor,
         content: data.content,
         sessionId: session.id,
+        questionId: data.questionId,
       },
     });
   }

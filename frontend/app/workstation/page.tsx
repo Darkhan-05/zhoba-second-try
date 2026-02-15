@@ -3,166 +3,161 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/context/SessionContext';
-import { Send, LogOut } from 'lucide-react';
+import { Send, CheckCircle } from 'lucide-react';
 
+// Выносим конфиг шляп за пределы компонента, чтобы он всегда был доступен
 const hatDetails = {
-  White: {
-    color: 'bg-white',
-    border: 'border-gray-300',
-    text: 'text-gray-800',
-    button: 'bg-gray-800 hover:bg-gray-900',
-    description: 'Focus on available data and facts. What information do we have? What is missing?',
-    icon: '⚪',
-  },
-  Red: {
-    color: 'bg-red-500',
-    border: 'border-red-600',
-    text: 'text-white',
-    button: 'bg-red-700 hover:bg-red-800',
-    description: 'Express emotions, feelings, and intuitions without justification.',
-    icon: '🔴',
-  },
-  Black: {
-    color: 'bg-gray-900',
-    border: 'border-black',
-    text: 'text-white',
-    button: 'bg-gray-700 hover:bg-gray-600',
-    description: 'Identify risks, difficulties, and potential problems. Why might this fail?',
-    icon: '⚫',
-  },
-  Yellow: {
-    color: 'bg-yellow-400',
-    border: 'border-yellow-500',
-    text: 'text-gray-900',
-    button: 'bg-yellow-600 hover:bg-yellow-700',
-    description: 'Look for benefits, value, and optimistic outcomes. Why is this a good idea?',
-    icon: '🟡',
-  },
-  Green: {
-    color: 'bg-green-500',
-    border: 'border-green-600',
-    text: 'text-white',
-    button: 'bg-green-700 hover:bg-green-800',
-    description: 'Focus on creativity, possibilities, alternatives, and new ideas.',
-    icon: '🟢',
-  },
-  Blue: {
-    color: 'bg-blue-600',
-    border: 'border-blue-700',
-    text: 'text-white',
-    button: 'bg-blue-800 hover:bg-blue-900',
-    description: 'Manage the thinking process. Summarize, conclude, and decide next steps.',
-    icon: '🔵',
-  },
+  White: { color: 'bg-slate-100', text: 'text-slate-800', button: 'bg-slate-800', description: 'Факты и цифры.', icon: '⚪' },
+  Red: { color: 'bg-red-500', text: 'text-white', button: 'bg-red-700', description: 'Эмоции и интуиция.', icon: '🔴' },
+  Black: { color: 'bg-zinc-900', text: 'text-white', button: 'bg-zinc-700', description: 'Риски и критицизм.', icon: '⚫' },
+  Yellow: { color: 'bg-yellow-400', text: 'text-gray-900', button: 'bg-yellow-600', description: 'Польза и оптимизм.', icon: '🟡' },
+  Green: { color: 'bg-green-500', text: 'text-white', button: 'bg-green-700', description: 'Креатив и идеи.', icon: '🟢' },
+  Blue: { color: 'bg-blue-600', text: 'text-white', button: 'bg-blue-800', description: 'Организация и выводы.', icon: '🔵' },
 };
 
 export default function Workstation() {
-  const { studentName, roomCode, hatColor, topic, clearSession } = useSession();
+  const { studentName, roomCode, hatColor, clearSession } = useSession();
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState(0);
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const router = useRouter();
 
+  // 1. Защита роута и загрузка вопросов
   useEffect(() => {
     if (!studentName || !roomCode || !hatColor) {
       router.push('/');
+      return;
     }
+
+    const fetchSession = async () => {
+      try {
+        const res = await fetch(`http://localhost:4001/sessions/${roomCode}`);
+        const data = await res.json();
+        setQuestions(data.questions || []);
+      } catch (err) {
+        console.error("Ошибка загрузки сессии:", err);
+      }
+    };
+    fetchSession();
   }, [studentName, roomCode, hatColor, router]);
 
-  if (!hatColor) return null;
+  // Проверка: если данных еще нет, показываем лоадер
+  if (!hatColor || questions.length === 0) return (
+    <div className="min-h-screen flex items-center justify-center">Загрузка вопросов...</div>
+  );
 
-  const details = hatDetails[hatColor];
+  // Теперь 'details' определен правильно внутри рендера
+  const details = hatDetails[hatColor as keyof typeof hatDetails];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const res = await fetch('http://localhost:4001/answers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentName,
-          roomCode,
           hatColor,
           content: answer,
+          questionId: questions[currentStep].id,
+          roomCode: roomCode // Добавляем код комнаты для бэкенда
         }),
       });
+
       if (res.ok) {
-        setSubmitted(true);
+        if (currentStep < questions.length - 1) {
+          setCurrentStep(currentStep + 1);
+          setAnswer('');
+        } else {
+          setIsFinished(true);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка отправки:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (submitted) {
+  // Компонент завершения (внутри этого же файла для простоты)
+  if (isFinished) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${details.color} p-4 transition-colors duration-500`}>
-        <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-          <div className="text-6xl mb-4">{details.icon}</div>
-          <h2 className="text-2xl font-bold mb-2 text-gray-800">Thank you, {studentName}!</h2>
-          <p className="text-gray-600 mb-6">Your contribution has been recorded. Wait for the teacher to show the results.</p>
+      <div className={`min-h-screen flex items-center justify-center ${details.color}`}>
+        <div className="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm">
+          <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black mb-2">Отлично, {studentName}!</h2>
+          <p className="text-gray-600 mb-6">Ты ответил на все вопросы. Твой вклад поможет ИИ составить точный отчет.</p>
           <button
-            onClick={() => setSubmitted(false)}
-            className="text-indigo-600 font-medium hover:underline"
+            onClick={() => { clearSession(); router.push('/'); }}
+            className="text-indigo-600 font-bold hover:underline"
           >
-            Submit another answer
+            Вернуться на главную
           </button>
         </div>
       </div>
     );
   }
 
+  const currentQuestion = questions[currentStep];
+  const progress = ((currentStep + 1) / questions.length) * 100;
+
   return (
     <div className={`min-h-screen ${details.color} p-4 md:p-8 transition-colors duration-500`}>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div className={`flex items-center space-x-3 px-4 py-2 bg-white/20 rounded-full backdrop-blur-sm ${details.text}`}>
-            <span className="text-2xl">{details.icon}</span>
-            <span className="font-bold">{hatColor} Hat</span>
+      <div className="max-w-3xl mx-auto">
+
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex justify-between items-end mb-2 text-white font-bold text-sm">
+            <span>Вопрос {currentStep + 1} из {questions.length}</span>
+            <span>{Math.round(progress)}%</span>
           </div>
-          <button
-            onClick={() => { clearSession(); router.push('/'); }}
-            className={`p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors ${details.text}`}
-          >
-            <LogOut size={20} />
-          </button>
+          <div className="w-full bg-black/20 h-3 rounded-full overflow-hidden backdrop-blur-sm">
+            <div
+              className="bg-white h-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className={`p-6 md:p-10 ${details.color} ${details.text} border-b ${details.border}`}>
-            <h2 className="text-sm uppercase tracking-widest font-bold opacity-80 mb-2">Topic</h2>
-            <h1 className="text-2xl md:text-4xl font-black">{topic}</h1>
-          </div>
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+          <div className="p-8 md:p-12">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-3xl">{details.icon}</span>
+              <span className={`px-4 py-1 rounded-full font-black text-sm uppercase tracking-widest ${details.color} ${details.text}`}>
+                {hatColor} Hat
+              </span>
+            </div>
 
-          <div className="p-6 md:p-10">
-            <div className="mb-8 p-6 bg-gray-50 rounded-2xl border-l-4 border-indigo-500">
-              <h3 className="text-gray-500 text-xs font-bold uppercase mb-2">Your Focus</h3>
-              <p className="text-gray-800 text-lg leading-relaxed">{details.description}</p>
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-8 leading-tight">
+              {currentQuestion?.content}
+            </h1>
+
+            <div className="bg-gray-50 p-6 rounded-2xl mb-8 border-l-4 border-indigo-500">
+              <p className="text-gray-700 italic">{details.description}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Your Response</label>
-                <textarea
-                  required
-                  rows={6}
-                  className="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 focus:border-indigo-500 focus:ring-0 transition-all resize-none text-gray-800"
-                  placeholder={`As a ${hatColor} Hat thinker, my thoughts are...`}
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                />
-              </div>
+              <textarea
+                required
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                rows={5}
+                className="w-full p-5 rounded-2xl border-2 border-gray-100 focus:border-indigo-500 focus:ring-0 transition-all text-lg"
+                placeholder="Напишите ваш ответ здесь..."
+              />
+
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex items-center justify-center space-x-2 py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg transform transition hover:-translate-y-1 active:scale-95 disabled:opacity-50 ${details.button}`}
+                className={`w-full py-5 rounded-2xl text-white font-bold text-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-3 ${details.button}`}
               >
-                {loading ? 'Sending...' : (
+                {loading ? 'Отправка...' : (
                   <>
-                    <span>Submit to Session</span>
+                    <span>{currentStep === questions.length - 1 ? 'Завершить разбор' : 'Следующий вопрос'}</span>
                     <Send size={20} />
                   </>
                 )}

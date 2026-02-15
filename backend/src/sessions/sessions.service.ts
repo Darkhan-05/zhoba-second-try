@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Session } from '@prisma/client';
 import { CreateSessionDto } from './sessions.controller';
@@ -7,26 +7,47 @@ import { CreateSessionDto } from './sessions.controller';
 export class SessionsService {
   constructor(private prisma: PrismaService) { }
 
-  async create(questions: string[], roomCode: string) {
+  async create(createSessionDto: CreateSessionDto) {
     return this.prisma.session.create({
       data: {
-        roomCode,
+        topic: createSessionDto.topic,
+        roomCode: createSessionDto.roomCode,
         questions: {
-          create: questions.map(content => ({ content }))
+          create: createSessionDto.questions.map(q => ({
+            content: q
+          }))
         }
       },
-      include: { questions: true }
+      include: {
+        questions: true
+      }
     });
   }
 
-  async findOne(roomCode: string): Promise<Session | null> {
-    return this.prisma.session.findUnique({
+  async findOne(roomCode: string) {
+    const session = await this.prisma.session.findUnique({
       where: { roomCode },
       include: {
+        questions: true,
+        answers: true,
         _count: {
-          select: { answers: true },
-        },
-      },
+          select: { answers: true }
+        }
+      }
+    });
+
+    if (!session) throw new NotFoundException('Session not found');
+    return session;
+  }
+
+  async findAll() {
+    return this.prisma.session.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: { answers: true, questions: true }
+        }
+      }
     });
   }
 

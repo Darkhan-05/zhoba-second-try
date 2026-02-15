@@ -12,6 +12,8 @@ export default function Home() {
   const router = useRouter();
   const { setSession } = useSession();
 
+  // Названия шляп на английском (оставляем для логики/бэкенда), 
+  // но в интерфейсе их можно будет перевести позже.
   const hats = ['White', 'Red', 'Black', 'Yellow', 'Green', 'Blue'] as const;
 
   const handleJoin = async (e: React.FormEvent) => {
@@ -20,22 +22,24 @@ export default function Home() {
     setError('');
 
     try {
+      // 1. Запрашиваем сессию. Бэкенд должен вернуть список уникальных имен в ответах.
       const res = await fetch(`http://localhost:4001/sessions/${roomCode}`);
-      if (!res.ok) {
-        throw new Error('Room not found');
-      }
+      if (!res.ok) throw new Error('Комната не найдена');
+
       const session = await res.json();
 
-      // Role assignment logic: (TotalParticipants % 6)
-      // Since we don't know the exact order of joining in real-time without sockets,
-      // we'll use the current answer count to assign a hat.
-      const hatIndex = session._count.answers % 6;
-      const assignedHat = hats[hatIndex];
+      // 2. Считаем уникальных студентов. 
+      // Предполагаем, что бэкенд возвращает session.answers
+      const uniqueStudentNames = new Set(session.answers.map((a: any) => a.studentName));
+
+      // 3. Индекс шляпы зависит от количества УЖЕ зашедших людей
+      const studentIndex = uniqueStudentNames.size;
+      const assignedHat = hats[studentIndex % 6];
 
       setSession(name, roomCode, assignedHat, session.topic);
       router.push('/workstation');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message === 'Failed to fetch' ? 'Ошибка сервера' : err.message);
     } finally {
       setLoading(false);
     }
@@ -44,23 +48,25 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full p-8 bg-white rounded-xl shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-8 text-indigo-600">Six Thinking Hats</h1>
+        <h1 className="text-3xl font-bold text-center mb-8 text-indigo-600">Шесть шляп мышления</h1>
         <form onSubmit={handleJoin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Student Name</label>
+            <label className="block text-sm font-medium text-gray-700">Имя ученика</label>
             <input
               type="text"
               required
+              placeholder="Введите ваше имя"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Room Code</label>
+            <label className="block text-sm font-medium text-gray-700">Код комнаты</label>
             <input
               type="text"
               required
+              placeholder="Например: 1234"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value)}
@@ -72,17 +78,17 @@ export default function Home() {
             disabled={loading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            {loading ? 'Joining...' : 'Join Session'}
+            {loading ? 'Вход...' : 'Войти в сессию'}
           </button>
         </form>
-        <div className="mt-6 text-center">
+        {/* <div className="mt-6 text-center">
           <button
             onClick={() => router.push('/teacher')}
             className="text-sm text-indigo-600 hover:text-indigo-500"
           >
-            Are you a teacher? Create a session
+            Вы учитель? Создать сессию
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
