@@ -5,6 +5,7 @@ import {
   Users, Sparkles, PlusCircle, RefreshCw, BarChart3,
   AlertCircle, Lightbulb, MessageSquare, CheckCircle2, Trash2, X, ChevronRight, LayoutDashboard
 } from 'lucide-react';
+import { API_URL } from '../page';
 
 interface Summary {
   factual_overview: string;
@@ -34,7 +35,7 @@ export default function TeacherDashboard() {
   // Загрузка всех сессий при старте
   const fetchAllSessions = async () => {
     try {
-      const res = await fetch('http://localhost:4001/sessions');
+      const res = await fetch(`${API_URL}/sessions`);
       const data = await res.json();
       setAllSessions(data);
     } catch (err) {
@@ -68,7 +69,7 @@ export default function TeacherDashboard() {
     const activeScenarios = scenarios.filter(s => s.trim() !== '');
 
     try {
-      const res = await fetch('http://localhost:4001/sessions', {
+      const res = await fetch(`${API_URL}/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,7 +100,7 @@ export default function TeacherDashboard() {
     setActiveSession(sessionData);
     // Обновляем данные сессии (количество ответов и т.д.)
     try {
-      const res = await fetch(`http://localhost:4001/sessions/${sessionData.roomCode}`);
+      const res = await fetch(`${API_URL}/sessions/${sessionData.roomCode}`);
       const data = await res.json();
       setActiveSession(data);
     } catch (e) { console.error(e) }
@@ -109,7 +110,7 @@ export default function TeacherDashboard() {
     if (!activeSession) return;
     setSummarizing(true);
     try {
-      const res = await fetch(`http://localhost:4001/sessions/${activeSession.roomCode}/analytics`);
+      const res = await fetch(`${API_URL}/sessions/${activeSession.roomCode}/analytics`);
       const data = await res.json();
       setSummary(data);
     } catch (err) {
@@ -179,7 +180,7 @@ export default function TeacherDashboard() {
 
         {/* Modal для создания */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed text-black inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="p-6 border-b flex justify-between items-center bg-gray-50">
                 <h2 className="text-xl font-bold flex items-center gap-2">
@@ -243,11 +244,11 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen text-black bg-gray-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <button
           onClick={() => { setActiveSession(null); setSummary(null); }}
-          className="mb-6 flex items-center gap-2 text-gray-500 hover:text-indigo-600 font-bold transition-colors"
+          className="mb-6 flex items-center gap-2 text-black hover:text-indigo-600 font-bold transition-colors"
         >
           <X size={20} /> Вернуться в меню
         </button>
@@ -311,9 +312,6 @@ export default function TeacherDashboard() {
 
         {/* СЕКЦИЯ ВСЕХ ОТВЕТОВ */}
         <section>
-          <button onClick={conseor}>
-            click
-          </button>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <MessageSquare className="text-indigo-600" />

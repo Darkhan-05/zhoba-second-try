@@ -70,6 +70,8 @@ The project uses Prisma with SQLite for ease of use.
 **Start Backend:**
 ```bash
 cd backend
+npx prisma generate
+npx prisma migrate dev --name init
 npm run start:dev
 ```
 

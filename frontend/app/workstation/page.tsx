@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/context/SessionContext';
 import { Send, CheckCircle } from 'lucide-react';
+import { API_URL } from '../page';
 
 // Выносим конфиг шляп за пределы компонента, чтобы он всегда был доступен
 const hatDetails = {
@@ -24,7 +25,6 @@ export default function Workstation() {
   const [isFinished, setIsFinished] = useState(false);
   const router = useRouter();
 
-  // 1. Защита роута и загрузка вопросов
   useEffect(() => {
     if (!studentName || !roomCode || !hatColor) {
       router.push('/');
@@ -33,7 +33,7 @@ export default function Workstation() {
 
     const fetchSession = async () => {
       try {
-        const res = await fetch(`http://localhost:4001/sessions/${roomCode}`);
+        const res = await fetch(`${API_URL}/sessions/${roomCode}`);
         const data = await res.json();
         setQuestions(data.questions || []);
       } catch (err) {
@@ -43,12 +43,10 @@ export default function Workstation() {
     fetchSession();
   }, [studentName, roomCode, hatColor, router]);
 
-  // Проверка: если данных еще нет, показываем лоадер
   if (!hatColor || questions.length === 0) return (
     <div className="min-h-screen flex items-center justify-center">Загрузка вопросов...</div>
   );
 
-  // Теперь 'details' определен правильно внутри рендера
   const details = hatDetails[hatColor as keyof typeof hatDetails];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +54,7 @@ export default function Workstation() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:4001/answers', {
+      const res = await fetch(`${API_URL}/answers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,13 +81,12 @@ export default function Workstation() {
     }
   };
 
-  // Компонент завершения (внутри этого же файла для простоты)
   if (isFinished) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${details.color}`}>
+      <div className={`min - h - screen flex items - center justify - center ${details.color}`}>
         <div className="bg-white p-10 rounded-3xl shadow-2xl text-center max-w-sm">
           <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-black mb-2">Отлично, {studentName}!</h2>
+          <h2 className="text-2xl text-black font-black mb-2">Отлично, {studentName}!</h2>
           <p className="text-gray-600 mb-6">Ты ответил на все вопросы. Твой вклад поможет ИИ составить точный отчет.</p>
           <button
             onClick={() => { clearSession(); router.push('/'); }}
@@ -106,19 +103,19 @@ export default function Workstation() {
   const progress = ((currentStep + 1) / questions.length) * 100;
 
   return (
-    <div className={`min-h-screen ${details.color} p-4 md:p-8 transition-colors duration-500`}>
+    <div className={`min - h - screen ${details.color} p - 4 md: p - 8 transition - colors text - black duration - 500`}>
       <div className="max-w-3xl mx-auto">
 
         {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex justify-between items-end mb-2 text-white font-bold text-sm">
+          <div className="flex justify-between items-end mb-2 text-black font-bold text-sm">
             <span>Вопрос {currentStep + 1} из {questions.length}</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <div className="w-full bg-black/20 h-3 rounded-full overflow-hidden backdrop-blur-sm">
             <div
               className="bg-white h-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${progress} % ` }}
             />
           </div>
         </div>
@@ -127,7 +124,7 @@ export default function Workstation() {
           <div className="p-8 md:p-12">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">{details.icon}</span>
-              <span className={`px-4 py-1 rounded-full font-black text-sm uppercase tracking-widest ${details.color} ${details.text}`}>
+              <span className={`px - 4 py - 1 rounded - full font - black text - sm uppercase tracking - widest ${details.color} ${details.text}`}>
                 {hatColor} Hat
               </span>
             </div>
@@ -153,7 +150,7 @@ export default function Workstation() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-5 rounded-2xl text-white font-bold text-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-3 ${details.button}`}
+                className={`w - full py - 5 rounded - 2xl text - white font - bold text - xl shadow - lg transition - transform active: scale - 95 flex items - center justify - center gap - 3 ${details.button}`}
               >
                 {loading ? 'Отправка...' : (
                   <>

@@ -1,42 +1,29 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-model Session {
-  id        String     @id @default(uuid())
-  roomCode  String     @unique
-  topic     String     @default("Untitled")
-  active    Boolean    @default(true)
-  questions Question[]
-  answers   Answer[]
-  createdAt DateTime   @default(now())
+model InviteToken {
+  id        String   @id
+  code      String   @unique
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdBy String
+  User      User?
 }
 
-model Question {
-  id        String   @id @default(uuid())
-  content   String
-  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId String
-  answers   Answer[]
-  createdAt DateTime @default(now())
-}
-
-model Answer {
-  id          String   @id @default(uuid())
-  studentName String
-  hatColor    String
-  content     String
-  question    Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  questionId  String?
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId   String
-  createdAt   DateTime @default(now())
+model User {
+  id            String      @id
+  username      String
+  loginId       String      @unique
+  deviceId      String
+  createdAt     DateTime    @default(now())
+  favorites     String
+  inviteTokenId String      @unique
+  InviteToken   InviteToken @relation(fields: [inviteTokenId], references: [id])
 }
