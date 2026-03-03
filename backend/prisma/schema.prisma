@@ -8,6 +8,35 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
+model Session {
+  id        String     @id @default(uuid())
+  topic     String
+  roomCode  String     @unique
+  createdAt DateTime   @default(now())
+  questions Question[]
+  answers   Answer[]
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  content   String
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  answers   Answer[]
+}
+
+model Answer {
+  id          String   @id @default(uuid())
+  studentName String
+  hatColor    String
+  content     String
+  createdAt   DateTime @default(now())
+  sessionId   String
+  questionId  String
+  session     Session  @relation(fields: [sessionId], references: [id])
+  question    Question @relation(fields: [questionId], references: [id])
+}
+
 model InviteToken {
   id        String   @id
   code      String   @unique
