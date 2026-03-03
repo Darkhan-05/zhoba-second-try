@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/context/SessionContext";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { LanguageToggle } from "./LanguageToggle";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 const geistMono = Geist_Mono({
@@ -14,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Six Thinking Hats",
-  description: "Educational interactive platform",
+  title: "Ойлаудың алты қалпағы | Шесть шляп мышления",
+  description: "Интерактивная образовательная платформа для критического мышления",
 };
 
 export default function RootLayout({
@@ -24,13 +28,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ru">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        <LanguageProvider>
+          <SessionProvider>
+            <LanguageToggle />
+            {children}
+          </SessionProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
